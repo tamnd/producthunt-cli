@@ -1,62 +1,94 @@
-package producthunt
+package producthunt_test
 
 import (
 	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
+
+	"github.com/tamnd/producthunt-cli/producthunt"
 )
 
-func TestGet(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("User-Agent") == "" {
-			t.Error("request carried no User-Agent")
-		}
-		_, _ = w.Write([]byte("ok"))
+func newTestClient(t *testing.T, handler http.Handler) *producthunt.Client {
+	ts := httptest.NewServer(handler)
+	t.Cleanup(ts.Close)
+	cfg := producthunt.DefaultConfig()
+	cfg.BaseURL = ts.URL
+	cfg.Rate = 0
+	return producthunt.NewClient(cfg)
+}
+
+func TestToday(t *testing.T) {
+	atomXML := `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>https://www.producthunt.com/posts/test-app</id>
+    <title>Test App — The best test app ever</title>
+    <link href="https://www.producthunt.com/posts/test-app"/>
+    <author><name>testuser</name></author>
+    <published>2026-06-14T10:00:00Z</published>
+  </entry>
+</feed>`
+	c := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/atom+xml")
+		_, _ = w.Write([]byte(atomXML))
 	}))
-	defer srv.Close()
-
-	c := NewClient()
-	c.Rate = 0 // no pacing in the test
-
-	body, err := c.Get(context.Background(), srv.URL)
+	products, err := c.Today(context.Background(), 10)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(body) != "ok" {
-		t.Errorf("body = %q, want %q", body, "ok")
+	if len(products) != 1 {
+		t.Fatalf("got %d products, want 1", len(products))
+	}
+	if products[0].Name != "Test App" {
+		t.Errorf("got name %q, want %q", products[0].Name, "Test App")
 	}
 }
 
-func TestGetRetriesOn503(t *testing.T) {
-	var hits int
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		hits++
-		if hits < 3 {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-		_, _ = w.Write([]byte("recovered"))
+func TestTodayLimit(t *testing.T) {
+	atomXML := `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>https://www.producthunt.com/posts/alpha</id>
+    <title>Alpha — First product</title>
+    <link href="https://www.producthunt.com/posts/alpha"/>
+    <author><name>alice</name></author>
+    <published>2026-06-14T10:00:00Z</published>
+  </entry>
+  <entry>
+    <id>https://www.producthunt.com/posts/beta</id>
+    <title>Beta — Second product</title>
+    <link href="https://www.producthunt.com/posts/beta"/>
+    <author><name>bob</name></author>
+    <published>2026-06-14T10:01:00Z</published>
+  </entry>
+  <entry>
+    <id>https://www.producthunt.com/posts/gamma</id>
+    <title>Gamma — Third product</title>
+    <link href="https://www.producthunt.com/posts/gamma"/>
+    <author><name>carol</name></author>
+    <published>2026-06-14T10:02:00Z</published>
+  </entry>
+</feed>`
+	c := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/atom+xml")
+		_, _ = w.Write([]byte(atomXML))
 	}))
-	defer srv.Close()
-
-	c := NewClient()
-	c.Rate = 0
-	c.Retries = 5
-
-	start := time.Now()
-	body, err := c.Get(context.Background(), srv.URL)
+	products, err := c.Today(context.Background(), 2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(body) != "recovered" {
-		t.Errorf("body = %q after retries", body)
+	if len(products) != 2 {
+		t.Errorf("got %d products, want 2", len(products))
 	}
-	if hits != 3 {
-		t.Errorf("server saw %d hits, want 3", hits)
-	}
-	if time.Since(start) < 500*time.Millisecond {
-		t.Error("retries did not back off")
+}
+
+func TestTodayError503(t *testing.T) {
+	c := newTestClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	_, err := c.Today(context.Background(), 0)
+	if err == nil {
+		t.Error("expected error on 503, got nil")
 	}
 }

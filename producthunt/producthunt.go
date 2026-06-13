@@ -1,52 +1,76 @@
-// Package producthunt is the library behind the ph command line:
-// the HTTP client, request shaping, and the typed data models for producthunt.
+// Package producthunt is the library behind the ph command: the HTTP client,
+// request shaping, and the typed data models for Product Hunt.
 //
-// The Client here is the spine every command shares. It sets a real
-// User-Agent, paces requests so a busy session stays polite, and retries the
-// transient failures (429 and 5xx) that any public site throws under load.
-// Build your endpoint calls and JSON decoding on top of it.
+// Data source: the public Atom feed at https://www.producthunt.com/feed.
+// No authentication or API key is required.
 package producthunt
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
-// DefaultUserAgent identifies the client to producthunt. A real, honest
-// User-Agent is both polite and the thing most likely to keep you unblocked.
+// DefaultUserAgent identifies the client to Product Hunt.
 const DefaultUserAgent = "ph/dev (+https://github.com/tamnd/producthunt-cli)"
 
-// Client talks to producthunt over HTTP.
-type Client struct {
-	HTTP      *http.Client
+// Config holds constructor parameters for Client.
+type Config struct {
+	BaseURL   string
 	UserAgent string
-	// Rate is the minimum gap between requests. Zero means no pacing.
-	Rate    time.Duration
-	Retries int
+	Rate      time.Duration
+	Retries   int
+	Timeout   time.Duration
+}
+
+// DefaultConfig returns sensible defaults: no rate limiting (one request per
+// command), two retries on transient errors, and a 30-second timeout.
+func DefaultConfig() Config {
+	return Config{
+		BaseURL:   "https://www.producthunt.com",
+		UserAgent: DefaultUserAgent,
+		Rate:      0,
+		Retries:   2,
+		Timeout:   30 * time.Second,
+	}
+}
+
+// Client talks to Product Hunt over HTTP.
+type Client struct {
+	http      *http.Client
+	userAgent string
+	rate      time.Duration
+	retries   int
+	// feedURL is overridable for testing; defaults to defaultFeedURL.
+	feedURL string
 
 	last time.Time
 }
 
-// NewClient returns a Client with sensible defaults: a 30s timeout, a 200ms
-// minimum gap between requests, and five retries on transient errors.
-func NewClient() *Client {
+// NewClient returns a Client built from cfg.
+func NewClient(cfg Config) *Client {
+	baseURL := cfg.BaseURL
+	if baseURL == "" {
+		baseURL = "https://www.producthunt.com"
+	}
 	return &Client{
-		HTTP:      &http.Client{Timeout: 30 * time.Second},
-		UserAgent: DefaultUserAgent,
-		Rate:      200 * time.Millisecond,
-		Retries:   5,
+		http:      &http.Client{Timeout: cfg.Timeout},
+		userAgent: cfg.UserAgent,
+		rate:      cfg.Rate,
+		retries:   cfg.Retries,
+		feedURL:   baseURL + "/feed",
 	}
 }
 
-// Get fetches url and returns the response body. It paces and retries according
-// to the client's settings. The caller owns nothing extra; the body is read
-// fully and closed here.
+// Get fetches url and returns the response body. It paces and retries
+// according to the client's settings.
 func (c *Client) Get(ctx context.Context, url string) ([]byte, error) {
 	var lastErr error
-	for attempt := 0; attempt <= c.Retries; attempt++ {
+	for attempt := 0; attempt <= c.retries; attempt++ {
 		if attempt > 0 {
 			select {
 			case <-ctx.Done():
@@ -72,9 +96,10 @@ func (c *Client) do(ctx context.Context, url string) (body []byte, retry bool, e
 	if err != nil {
 		return nil, false, err
 	}
-	req.Header.Set("User-Agent", c.UserAgent)
+	req.Header.Set("User-Agent", c.userAgent)
+	req.Header.Set("Accept", "application/atom+xml, application/xml, text/xml")
 
-	resp, err := c.HTTP.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, true, err
 	}
@@ -87,19 +112,18 @@ func (c *Client) do(ctx context.Context, url string) (body []byte, retry bool, e
 		return nil, false, fmt.Errorf("http %d", resp.StatusCode)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 	if err != nil {
 		return nil, true, err
 	}
 	return b, false, nil
 }
 
-// pace blocks until at least Rate has passed since the previous request.
 func (c *Client) pace() {
-	if c.Rate <= 0 {
+	if c.rate <= 0 {
 		return
 	}
-	if wait := c.Rate - time.Since(c.last); wait > 0 {
+	if wait := c.rate - time.Since(c.last); wait > 0 {
 		time.Sleep(wait)
 	}
 	c.last = time.Now()
@@ -111,4 +135,67 @@ func backoff(attempt int) time.Duration {
 		d = 5 * time.Second
 	}
 	return d
+}
+
+// Today fetches the Product Hunt Atom feed and returns up to limit Product
+// records. If limit is 0 or greater than the number of entries in the feed,
+// all entries are returned.
+func (c *Client) Today(ctx context.Context, limit int) ([]Product, error) {
+	body, err := c.Get(ctx, c.feedURL)
+	if err != nil {
+		return nil, err
+	}
+	var feed atomFeed
+	if err := xml.Unmarshal(body, &feed); err != nil {
+		return nil, fmt.Errorf("parse feed: %w", err)
+	}
+	out := make([]Product, 0, len(feed.Entries))
+	for i, e := range feed.Entries {
+		name, tagline := splitTitle(e.Title)
+		u := e.Link.Href
+		if u == "" {
+			u = e.ID
+		}
+		p := Product{
+			Rank:      i + 1,
+			Name:      name,
+			Tagline:   tagline,
+			Author:    e.Author.Name,
+			Published: formatDate(e.Published),
+			URL:       u,
+		}
+		out = append(out, p)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
+	}
+	return out, nil
+}
+
+// splitTitle parses "Product Name — Tagline" into its two parts.
+// The separator is an em dash (U+2014) surrounded by spaces: " — ".
+// Falls back to " - " if the em dash is not found.
+func splitTitle(title string) (name, tagline string) {
+	const emDashSep = " — "
+	if i := strings.Index(title, emDashSep); i >= 0 {
+		return strings.TrimSpace(title[:i]), strings.TrimSpace(title[i+len(emDashSep):])
+	}
+	const hyphenSep = " - "
+	if i := strings.Index(title, hyphenSep); i >= 0 {
+		return strings.TrimSpace(title[:i]), strings.TrimSpace(title[i+len(hyphenSep):])
+	}
+	return strings.TrimSpace(title), ""
+}
+
+// formatDate parses an RFC 3339 timestamp and returns the date portion
+// formatted as "2006-01-02". Returns the input string unchanged on parse error.
+func formatDate(published string) string {
+	t, err := time.Parse(time.RFC3339, published)
+	if err != nil {
+		t, err = time.Parse("2006-01-02T15:04:05Z07:00", published)
+	}
+	if err != nil {
+		return published
+	}
+	return t.UTC().Format("2006-01-02")
 }
