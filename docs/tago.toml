@@ -1,0 +1,10 @@
+title       = "ph"
+baseURL     = "https://producthunt-cli.tamnd.com/"
+description = "Browse today's top launches on Product Hunt"
+contentDir  = "content"
+outputDir   = "public"
+theme       = "tago-doks"
+syntaxHighlight = "true"
+
+[params]
+github = "https://github.com/tamnd/producthunt-cli"
