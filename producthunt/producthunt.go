@@ -45,8 +45,7 @@ type Client struct {
 	userAgent string
 	rate      time.Duration
 	retries   int
-	// feedURL is overridable for testing; defaults to defaultFeedURL.
-	feedURL string
+	baseURL   string
 
 	last time.Time
 }
@@ -62,7 +61,7 @@ func NewClient(cfg Config) *Client {
 		userAgent: cfg.UserAgent,
 		rate:      cfg.Rate,
 		retries:   cfg.Retries,
-		feedURL:   baseURL + "/feed",
+		baseURL:   baseURL,
 	}
 }
 
@@ -141,7 +140,7 @@ func backoff(attempt int) time.Duration {
 // records. If limit is 0 or greater than the number of entries in the feed,
 // all entries are returned.
 func (c *Client) Today(ctx context.Context, limit int) ([]Product, error) {
-	body, err := c.Get(ctx, c.feedURL)
+	body, err := c.Get(ctx, c.baseURL+"/feed")
 	if err != nil {
 		return nil, err
 	}
