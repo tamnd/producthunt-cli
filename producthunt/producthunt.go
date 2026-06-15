@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+// Host is the Product Hunt hostname for URI domain registration.
+const Host = "www.producthunt.com"
+
 // DefaultUserAgent identifies the client to Product Hunt.
 const DefaultUserAgent = "ph/dev (+https://github.com/tamnd/producthunt-cli)"
 
