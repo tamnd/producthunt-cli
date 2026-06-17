@@ -3,12 +3,15 @@ package producthunt
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/tamnd/any-cli/kit/errs"
 )
 
 // testClient returns a client with no pacing, pointed at base for both planes and
@@ -72,6 +75,26 @@ func TestGetRetriesOn500(t *testing.T) {
 	}
 	if time.Since(start) < 500*time.Millisecond {
 		t.Error("retries did not back off")
+	}
+}
+
+// TestGetNetworkError checks that a 5xx that never recovers ends as ErrNetwork, so
+// mapErr can report it as exit 8 rather than a bare generic failure.
+func TestGetNetworkError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	c := testClient(srv.URL)
+	c.cfg.Retries = 1
+
+	_, err := c.get(context.Background(), srv.URL)
+	if !errors.Is(err, ErrNetwork) {
+		t.Fatalf("err = %v, want ErrNetwork", err)
+	}
+	if code := errs.ExitCode(mapErr(err)); code != 8 {
+		t.Errorf("mapErr exit code = %d, want 8", code)
 	}
 }
 

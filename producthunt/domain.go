@@ -229,8 +229,9 @@ func (Domain) Locate(uriType, id string) (string, error) {
 // mapErr translates a library error into a kit error so the exit code matches the
 // rest of the fleet: a missing entity reads as not found (exit 6), a throttle as
 // rate limited (exit 5), the wall or a rejected/missing token as need-auth (exit 4),
-// a missing credential on an opt-in surface as need-auth, and a caught bad argument
-// as usage (exit 2).
+// a missing credential on an opt-in surface as need-auth, a caught bad argument
+// as usage (exit 2), and a transport failure that survives every retry as a
+// network error (exit 8).
 func mapErr(err error) error {
 	if err == nil {
 		return nil
@@ -246,6 +247,8 @@ func mapErr(err error) error {
 		return errs.NeedAuth("%s", err.Error())
 	case errors.Is(err, ErrUsage):
 		return errs.Usage("%s", err.Error())
+	case errors.Is(err, ErrNetwork):
+		return errs.Network("%s", err.Error())
 	default:
 		return err
 	}
