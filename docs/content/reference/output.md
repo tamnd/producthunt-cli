@@ -5,8 +5,7 @@ weight: 30
 ---
 
 Every command renders through one formatter, so the same flags work everywhere.
-Pick a format with `-o`, or let ph choose: a table when writing to a terminal,
-JSONL when piped.
+Pick a format with `-o`, or let ph choose: a table when writing to a terminal, JSONL when piped.
 
 ## Formats
 
@@ -35,13 +34,10 @@ ph <command> -o raw       # the underlying bytes, unformatted
 
 ## Color
 
-On an interactive terminal the `table`, `list`, and `json`/`jsonl` formats are
-colored: the table draws a dim border with an accented header, `list` styles each
-record's heading and keys, and JSON keys, strings, numbers, and literals are
-highlighted. Color is suppressed the moment output is not a terminal, so a pipe
-always gets plain, parseable bytes. Force the choice with `--color always|never`
-(or set `NO_COLOR`). `markdown`, `csv`, `tsv`, `url`, and `raw` are never colored,
-so they stay safe to redirect into a file.
+On an interactive terminal the `table`, `list`, and `json`/`jsonl` formats are colored: the table draws a dim border with an accented header, `list` styles each record's heading and keys, and JSON keys, strings, numbers, and literals are highlighted.
+Color is suppressed the moment output is not a terminal, so a pipe always gets plain, parseable bytes.
+Force the choice with `--color always|never` (or set `NO_COLOR`).
+`markdown`, `csv`, `tsv`, `url`, and `raw` are never colored, so they stay safe to redirect into a file.
 
 ## Narrowing columns
 
@@ -51,13 +47,12 @@ Keep only the fields you want:
 ph <command> --fields name,votes,url
 ```
 
-`--no-header` drops the header row in `table` and `csv` output, which helps when
-a downstream tool expects bare rows.
+`--no-header` drops the header row in `table` and `csv` output, which helps when a downstream tool expects bare rows.
 
 ## Templating rows
 
-For full control over each line, apply a Go text/template. Fields are the JSON
-keys, capitalised:
+For full control over each line, apply a Go text/template.
+Fields are the JSON keys, capitalised:
 
 ```bash
 ph <command> --template '{{.URL}} {{.Name}}'
@@ -65,12 +60,11 @@ ph <command> --template '{{.URL}} {{.Name}}'
 
 ## Why auto-detection helps
 
-Because the default adapts to the destination, the same command reads well by
-hand and parses cleanly in a pipe:
+Because the default adapts to the destination, the same command reads well by hand and parses cleanly in a pipe:
 
 ```bash
 ph posts            # a table, because this is a terminal
 ph posts | wc -l    # JSONL, because this is a pipe
 ```
 
-You only reach for `-o` when you want something other than that default.
+You reach for `-o` when you want something other than that default.

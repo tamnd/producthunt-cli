@@ -6,7 +6,4 @@ weight: 10
 featured: true
 ---
 
-Three short pages: the [introduction](/getting-started/introduction/) for how
-ph is put together, [installation](/getting-started/installation/) to
-get the binary, and the [quick start](/getting-started/quick-start/) to run
-something real.
+Three short pages: the [introduction](/getting-started/introduction/) for how ph is put together, [installation](/getting-started/installation/) to get the binary, and the [quick start](/getting-started/quick-start/) to run something real.

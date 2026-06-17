@@ -23,8 +23,7 @@ Run `ph <command> --help` for the full flag list on any command.
 | `collection <ref>` | Show one collection with its posts (API plane) |
 | `user <ref>` | Show one user with the posts they made (API plane) |
 
-A `<ref>` is a numeric post id, a page slug, an `@username` (for `user`), or a
-full Product Hunt URL.
+A `<ref>` is a numeric post id, a page slug, an `@username` (for `user`), or a full Product Hunt URL.
 
 ## Crawl commands
 
@@ -60,11 +59,9 @@ These need no network and answer instantly.
 | `--after` | Posts on or after this ISO date (API plane) |
 | `--before` | Posts on or before this ISO date (API plane) |
 
-The API credentials are read from `PRODUCTHUNT_TOKEN`, or
-`PRODUCTHUNT_CLIENT_ID` and `PRODUCTHUNT_CLIENT_SECRET`, in the environment,
-never a flag. The keyless feed serves only the newest, unfiltered post list; any
-`--order` other than `newest`, or any `--topic`, `--featured`, `--after`, or
-`--before`, needs the API plane. See [configuration](/reference/configuration/).
+The API credentials are read from `PRODUCTHUNT_TOKEN`, or `PRODUCTHUNT_CLIENT_ID` and `PRODUCTHUNT_CLIENT_SECRET`, in the environment, never a flag.
+The keyless feed serves only the newest, unfiltered post list; any `--order` other than `newest`, or any `--topic`, `--featured`, `--after`, or `--before`, needs the API plane.
+See [configuration](/reference/configuration/).
 
 ## Global flags
 
@@ -90,6 +87,4 @@ These are shared by every operation, so they work the same on every command.
 | `-q, --quiet` | Suppress progress output |
 | `--color` | `auto`, `always`, or `never` |
 
-See [output formats](/reference/output/) for what `-o`, `--fields`, and
-`--template` produce, and [configuration](/reference/configuration/) for
-environment variables and defaults.
+See [output formats](/reference/output/) for what `-o`, `--fields`, and `--template` produce, and [configuration](/reference/configuration/) for environment variables and defaults.

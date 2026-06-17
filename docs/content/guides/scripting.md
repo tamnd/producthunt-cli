@@ -4,14 +4,13 @@ description: "Shape records for jq, spreadsheets, and a local store, and serve t
 weight: 30
 ---
 
-Every `ph` command emits the same kind of record, and every command shares one
-output contract. That makes `ph` a building block in a pipeline rather than a
-thing you read by eye. This guide covers the moving parts.
+Every `ph` command emits the same kind of record, and every command shares one output contract.
+That makes `ph` a building block in a pipeline rather than a thing you read by eye.
+This guide covers the moving parts.
 
 ## The default adapts to the destination
 
-Left alone, `ph` prints a table to a terminal and JSONL into a pipe, so the same
-command reads well by hand and parses cleanly downstream:
+Left alone, `ph` prints a table to a terminal and JSONL into a pipe, so the same command reads well by hand and parses cleanly downstream:
 
 ```bash
 ph feed                  # a table, because this is a terminal
@@ -46,8 +45,8 @@ ph posts --fields name,url -o tsv             # tab-separated, for cut and awk
 ph post brainflow-2 --template '{{.Name}} got {{.Votes}} votes'
 ```
 
-Template fields are the JSON keys, capitalised. `--no-header` drops the header
-row in `table` and `csv` when a downstream tool expects bare rows.
+Template fields are the JSON keys, capitalised.
+`--no-header` drops the header row in `table` and `csv` when a downstream tool expects bare rows.
 
 ## Into a spreadsheet
 
@@ -58,8 +57,7 @@ ph topics -o csv > topics.csv
 
 ## Into a database
 
-`--db` tees every emitted record into a store as a side effect of reading, so a
-session fills a local database without a separate import step:
+`--db` tees every emitted record into a store as a side effect of reading, so a session fills a local database without a separate import step:
 
 ```bash
 ph posts -n 200 --db ph.db                    # a SQLite file
@@ -92,10 +90,7 @@ ph mcp                                         # speak MCP over stdio to an agen
 
 ## Be a good client
 
-`ph` paces requests and retries the transient failures, but a public site and a
-rate-limited API both push back under load. Raise the delay between requests with
-`--rate 1s` for a long run, and lean on the on-disk cache: a repeated read is
-served from disk for six hours by default. Use `--refresh` to rewrite the cache,
-`--no-cache` to bypass it, or `--cache-ttl` to change how long a hit stays fresh.
-See [troubleshooting](/reference/troubleshooting/) for what the exit codes mean
-when a read does not come back.
+`ph` paces requests and retries the transient failures, but a public site and a rate-limited API both push back under load.
+Raise the delay between requests with `--rate 1s` for a long run, and lean on the on-disk cache: a repeated read is served from disk for six hours by default.
+Use `--refresh` to rewrite the cache, `--no-cache` to bypass it, or `--cache-ttl` to change how long a hit stays fresh.
+See [troubleshooting](/reference/troubleshooting/) for what the exit codes mean when a read does not come back.
