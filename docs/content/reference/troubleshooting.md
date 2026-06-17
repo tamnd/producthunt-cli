@@ -35,7 +35,7 @@ Re-check them in Product Hunt's API dashboard.
 
 Product Hunt rate-limits like any public site, and the GraphQL API also caps query complexity.
 `ph` already paces requests and retries the transient failures, but a hard limit still means backing off.
-Raise the delay between requests with `--rate` (for example `--rate 1s`) and retry later.
+`ph` already waits two seconds between requests; raise that with `--rate` (for example `--rate 5s`) and retry later.
 A burst of 429 or a complexity error is the API asking you to slow down, not a defect.
 
 ## Nothing is found for something you expected

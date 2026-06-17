@@ -19,7 +19,11 @@ var (
 
 	// ErrRateLimited is a sustained 429 after retries, or the GraphQL complexity cap.
 	// Maps to exit 5.
-	ErrRateLimited = errors.New("rate limited by Product Hunt: slow down with --delay or try again later")
+	ErrRateLimited = errors.New("rate limited by Product Hunt: slow down with --rate or try again later")
+
+	// ErrNetwork is a transport failure that survives every retry: a connection
+	// refused, a timeout, a DNS error, or a 5xx that never recovered. Maps to exit 8.
+	ErrNetwork = errors.New("network error reaching Product Hunt")
 
 	// ErrUsage is a bad argument the library catches (an unrecognized reference, a
 	// bad order). Maps to exit 2.

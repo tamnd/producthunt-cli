@@ -89,7 +89,7 @@ func (c *Client) get(ctx context.Context, rawURL string) ([]byte, error) {
 	if errors.Is(lastErr, ErrRateLimited) {
 		return nil, ErrRateLimited
 	}
-	return nil, fmt.Errorf("get %s: %w", rawURL, lastErr)
+	return nil, fmt.Errorf("get %s: %w: %v", rawURL, ErrNetwork, lastErr)
 }
 
 func (c *Client) do(ctx context.Context, rawURL string) (body []byte, retry bool, err error) {
@@ -183,7 +183,7 @@ func (c *Client) postGraphQL(ctx context.Context, query string, vars map[string]
 	if errors.Is(lastErr, ErrRateLimited) {
 		return nil, ErrRateLimited
 	}
-	return nil, fmt.Errorf("graphql: %w", lastErr)
+	return nil, fmt.Errorf("graphql: %w: %v", ErrNetwork, lastErr)
 }
 
 // doPost performs one POST and returns the body, the status, and whether a

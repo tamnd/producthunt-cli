@@ -65,7 +65,7 @@ The same flags work on every command:
 
 ```bash
 ph posts --fields name,votes,comments         # keep only these columns
-ph post brainflow-2 --template '{{.Name}}: {{.Tagline}}'
+ph post brainflow-2 --template '{{.name}}: {{.tagline}}'
 ph comments 1173164 -o jsonl | jq .body        # one object per line, into jq
 ```
 

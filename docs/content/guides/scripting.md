@@ -42,10 +42,11 @@ Keep only the columns you care about, or write each line yourself:
 ```bash
 ph posts --fields name,votes,comments         # three columns
 ph posts --fields name,url -o tsv             # tab-separated, for cut and awk
-ph post brainflow-2 --template '{{.Name}} got {{.Votes}} votes'
+ph post brainflow-2 --template '{{.name}} got {{.votes}} votes'
 ```
 
-Template fields are the JSON keys, capitalised.
+Template fields are the JSON keys, exactly as `-o json` prints them, in lower case: `{{.name}}`, `{{.votes}}`, `{{.tagline}}`.
+Run a command with `-o json` once to see the field names you can reference.
 `--no-header` drops the header row in `table` and `csv` when a downstream tool expects bare rows.
 
 ## Into a spreadsheet
@@ -62,9 +63,9 @@ ph topics -o csv > topics.csv
 ```bash
 ph posts -n 200 --db ph.db                    # a SQLite file
 ph comments 1173164 --db ph.db                # adds to the same store
-ph posts --db 'postgres://localhost/ph'       # or a Postgres URL
 ```
 
+The bundled build stores records in SQLite, so `--db` takes a file path.
 The records keep their shape, so you query them with plain SQL afterwards.
 
 ## Just the URLs
@@ -91,6 +92,6 @@ ph mcp                                         # speak MCP over stdio to an agen
 ## Be a good client
 
 `ph` paces requests and retries the transient failures, but a public site and a rate-limited API both push back under load.
-Raise the delay between requests with `--rate 1s` for a long run, and lean on the on-disk cache: a repeated read is served from disk for six hours by default.
+`ph` already waits two seconds between requests; raise that with `--rate 5s` for a long run, and lean on the on-disk cache: a repeated read is served from disk for six hours by default.
 Use `--refresh` to rewrite the cache, `--no-cache` to bypass it, or `--cache-ttl` to change how long a hit stays fresh.
 See [troubleshooting](/reference/troubleshooting/) for what the exit codes mean when a read does not come back.

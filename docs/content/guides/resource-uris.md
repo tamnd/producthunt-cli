@@ -63,7 +63,7 @@ The other records point back, so the graph is walkable from any seed:
 | `topic` | `post_refs` | the posts in the topic |
 | `collection` | `post_refs`, `topic_refs`, `curator_ref` | its posts, topics, and curator |
 | `user` | `post_refs` | the posts the user made |
-| `comment` | `user_ref` | the comment's author |
+| `comment` | `user_ref`, `post` | the comment's author and the post it is on |
 
 ```bash
 ant ls     producthunt://post/1173164            # the edges out of this post

@@ -103,6 +103,8 @@ case errors.Is(err, ErrRateLimited):
     return errs.RateLimited("%s", err.Error())
 case errors.Is(err, ErrBlocked), errors.Is(err, ErrNeedKey):
     return errs.NeedAuth("%s", err.Error())
+case errors.Is(err, ErrNetwork):
+    return errs.Network("%s", err.Error())
 ```
 
 See [output formats](/reference/output/) for how records render, and [resource URIs](/guides/resource-uris/) for how a host addresses them.

@@ -75,14 +75,14 @@ These are shared by every operation, so they work the same on every command.
 | `--no-header` | Omit the header row in `table` and `csv` |
 | `-n, --limit` | Stop after N records (0 means no limit) |
 | `--user-agent` | User-Agent sent with each request |
-| `--rate` | Minimum delay between requests |
-| `--retries` | Retry attempts on rate limit or 5xx |
-| `--timeout` | Per-request timeout |
-| `--cache-ttl` | How long a cached response stays fresh |
+| `--rate` | Minimum delay between requests (default 2s) |
+| `--retries` | Retry attempts on rate limit or 5xx (default 3) |
+| `--timeout` | Per-request timeout (default 30s) |
+| `--cache-ttl` | How long a cached response stays fresh (default 6h) |
 | `--no-cache` | Bypass on-disk caches |
 | `--refresh` | Fetch fresh copies and rewrite the cache, ignoring any hit |
 | `--data-dir` | Override the data directory |
-| `--db` | Tee every record into a store (e.g. `out.db`, `postgres://...`) |
+| `--db` | Tee every record into a SQLite store (a file path, e.g. `out.db`) |
 | `-v, --verbose` | Increase verbosity (repeatable) |
 | `-q, --quiet` | Suppress progress output |
 | `--color` | `auto`, `always`, or `never` |
