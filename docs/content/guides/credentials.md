@@ -62,4 +62,4 @@ ph posts --plane web                  # the keyless feed, even with credentials 
 ph posts --plane api --order votes    # the ranked stream from the API
 ```
 
-See [configuration](/reference/configuration/) for the full list of settings and their environment fallbacks.
+See [configuration](/reference/configuration/) for the full list of settings and the environment variables `ph` reads.

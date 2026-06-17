@@ -36,9 +36,13 @@ With nothing set, `ph` reads the web plane, which serves only the keyless Atom f
 | Setting | Default | Flag |
 |---|---|---|
 | Plane | `auto` | `--plane` |
-| Requests | paced and retried on 429/5xx | `--rate`, `--retries` |
+| Delay between requests | 2s | `--rate` |
+| Retry attempts on 429 or 5xx | 3 | `--retries` |
 | Per-request timeout | 30s | `--timeout` |
 | On-disk cache | under the data directory, fresh for 6h | `--cache-ttl`, `--no-cache`, `--refresh` |
+
+A bare `--rate`, `--retries`, or `--timeout` shows `0` in `--help` because that is the unset value; `ph` fills the defaults above when you leave the flag off.
+Pass a flag to override one, for example `--rate 5s` to slow a long run down further.
 
 ## The data directory
 
@@ -51,23 +55,27 @@ Caches and any record store live under one data directory, chosen in this order:
 
 ## Environment variables
 
-Every flag has an environment fallback, prefixed `PH_` in upper case with dashes as underscores.
-For example:
+`ph` reads a small, fixed set of environment variables. Everything else is a flag.
 
-```bash
-export PH_RATE=1s        # same as --rate 1s
-export PH_PLANE=web      # same as --plane web
-export PH_DATA_DIR=~/data/ph
-```
+| Variable | Effect |
+|---|---|
+| `PRODUCTHUNT_TOKEN` | a developer token that turns on the API plane |
+| `PRODUCTHUNT_CLIENT_ID`, `PRODUCTHUNT_CLIENT_SECRET` | application credentials that mint a token for the API plane |
+| `PH_DATA_DIR` | the data directory for caches and any record store |
+| `XDG_DATA_HOME` | the base for `ph`'s data directory when `PH_DATA_DIR` is unset |
+| `NO_COLOR` | when set, disables colored output |
 
-Flags win over environment variables, which win over the built-in defaults.
-The exception is the API credentials, which have no flag and are read only from `PRODUCTHUNT_TOKEN`, `PRODUCTHUNT_CLIENT_ID`, and `PRODUCTHUNT_CLIENT_SECRET`.
+The API credentials have no flag on purpose, so they stay out of your shell history and process list.
+The pacing, plane, cache, and output settings are flags, not environment variables.
 
 ## Sending records to a store
 
 `--db` tees every emitted record into a store as a side effect of reading, so a session fills a local database without a separate import step:
 
 ```bash
-ph posts --db out.db                  # SQLite file
-ph comments 1173164 --db 'postgres://...'
+ph posts --db out.db                  # a SQLite file
+ph comments 1173164 --db out.db       # adds to the same store
 ```
+
+The bundled build stores records in SQLite, so `--db` takes a file path.
+The records keep their JSON shape, so you query them with plain SQL afterwards.

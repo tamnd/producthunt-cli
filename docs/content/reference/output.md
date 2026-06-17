@@ -52,11 +52,13 @@ ph <command> --fields name,votes,url
 ## Templating rows
 
 For full control over each line, apply a Go text/template.
-Fields are the JSON keys, capitalised:
+Fields are the JSON keys, exactly as `-o json` prints them, in lower case:
 
 ```bash
-ph <command> --template '{{.URL}} {{.Name}}'
+ph <command> --template '{{.url}} {{.name}}'
 ```
+
+Run a command with `-o json` once to see the field names you can reference.
 
 ## Why auto-detection helps
 
