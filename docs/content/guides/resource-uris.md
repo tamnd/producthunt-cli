@@ -76,8 +76,19 @@ ant ls     producthunt://post/1173164            # the edges out of this post
 ant export producthunt://post/1173164 --follow 2 --to ./data
 ```
 
+`ant ls` reads the link fields off the record, so one post lists its comment
+thread, its hunter, its makers, and its topics as URIs a host can follow next:
+
+```
+producthunt://comments/1173164
+producthunt://user/rrhoover
+producthunt://topic/artificial-intelligence
+```
+
 `ant export --follow` and `ant graph` walk those edges, across tools when a link
-points at another site's scheme.
+points at another site's scheme. A slice-valued edge (the makers and topics of a
+post, the posts of a topic) expands to one URI per element, so the walk fans out
+without any per-record special casing.
 
 ## Walking from the keyless seed
 

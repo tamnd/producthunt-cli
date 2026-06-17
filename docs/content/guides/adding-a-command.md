@@ -84,6 +84,19 @@ Two flags shape how a host treats an operation:
   every member is a URI a host can follow. The `comments` op does this: each
   comment carries its `post` and `user_ref` edges.
 
+A list op also picks up the shared `--limit` flag by adding one field to its
+input struct, so `-n` works the same on every command:
+
+```go
+type itemsIn struct {
+    Limit  int     `kit:"flag,inherit"`
+    Client *Client `kit:"inject"`
+}
+```
+
+The handler reads `in.Limit` and stops there. `kit:"flag,inherit"` binds the one
+`--limit` the whole app shares rather than declaring a new flag per command.
+
 ## Pick the right plane
 
 A handler chooses its plane with `planeFor(webOK, apiOK)`, which honours
